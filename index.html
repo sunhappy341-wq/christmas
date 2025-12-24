@@ -2,170 +2,168 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SATELLITE X-MAS OBSERVER</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>✨ 愿你冬日温暖 - 平安夜快乐</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', 'PingFang SC', monospace; }
-        #hud {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 10; padding: 25px; color: #00f2ff;
+        :root { --warm-gold: #f39c12; --soft-red: #e74c3c; --bg-blue: #1a2a6c; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d); 
+            height: 100vh; overflow: hidden; font-family: 'PingFang SC', sans-serif;
+            display: flex; justify-content: center; align-items: center;
         }
-        
-        .radar {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 85vh; height: 85vh; border: 1px solid rgba(0, 242, 255, 0.1);
-            border-radius: 50%; pointer-events: none;
-        }
-        .radar::after {
-            content: ''; position: absolute; width: 50%; height: 50%;
-            background: conic-gradient(from 0deg, rgba(0,242,255,0.2), transparent);
-            top: 0; left: 0; transform-origin: 100% 100%;
-            animation: rotate 4s linear infinite;
-        }
-        @keyframes rotate { 100% { transform: rotate(360deg); } }
-        
-        .main-btn {
-            position: fixed; bottom: 15%; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 242, 255, 0.1); border: 1px solid #00f2ff;
-            color: #00f2ff; padding: 20px 40px; font-size: 14px; cursor: pointer;
-            letter-spacing: 5px; pointer-events: all; backdrop-filter: blur(10px);
-            z-index: 100;
-        }
-        .main-btn:hover { background: #00f2ff; color: #000; box-shadow: 0 0 30px #00f2ff; }
 
-        /* 文案展示区 */
-        #blessing-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 80%; max-width: 400px; background: rgba(0, 10, 20, 0.9);
-            border: 1px solid #00f2ff; padding: 30px; display: none;
-            flex-direction: column; align-items: center; z-index: 200;
-            backdrop-filter: blur(20px); box-shadow: 0 0 50px rgba(0,242,255,0.2);
+        /* 雪花背景 */
+        #canvas-bg { position: fixed; top: 0; left: 0; z-index: 0; pointer-events: none; }
+
+        /* 交互主体 */
+        .stage { position: relative; z-index: 10; text-align: center; }
+        
+        /* 浮动礼盒 */
+        .gift-box {
+            width: 150px; height: 150px; cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: float 3s ease-in-out infinite;
         }
-        .typewriter {
-            font-size: 16px; line-height: 1.8; color: #fff;
-            text-align: center; border-right: 2px solid #00f2ff;
-            white-space: pre-wrap; overflow: hidden;
-            letter-spacing: 2px;
+        .gift-box:hover { transform: scale(1.1) rotate(5deg); }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        /* 隐藏的跳转墙 */
+        .portal-grid {
+            display: none; grid-template-columns: repeat(2, 1fr); gap: 15px;
+            margin-top: 30px; opacity: 0; transform: translateY(20px);
         }
+        .portal-item {
+            background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);
+            padding: 20px; border-radius: 15px; color: white; text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.3); transition: 0.3s;
+        }
+        .portal-item:hover { background: rgba(255, 255, 255, 0.4); transform: scale(1.05); }
+
+        /* 温暖文案 */
+        .greeting { color: white; margin-top: 20px; letter-spacing: 3px; line-height: 1.6; }
+        .hint { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 10px; }
+
+        /* 视频弹窗适配 */
+        .video-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 100; display: none;
+            justify-content: center; align-items: center;
+        }
+        .video-box { width: 90%; max-width: 600px; aspect-ratio: 16/9; position: relative; }
+        .close-vid { position: absolute; top: -40px; right: 0; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="radar"></div>
-<div id="hud">
-    <div style="display:flex; justify-content: space-between; font-size: 12px;">
-        <div>BEIDOU-SCANNER V4.0<br>STATUS: DEPLOYED</div>
-        <div style="text-align:right;">COORD: 35.86 N<br>LON: 104.19 E</div>
+<canvas id="canvas-bg"></canvas>
+
+<div class="stage">
+    <div id="main-scene">
+        <div class="gift-box" onclick="unfoldMagic()" id="gift">🎁</div>
+        <div class="greeting">
+            <h1 id="title">Hey, 圣诞快乐</h1>
+            <p class="hint" id="hint-text">点击礼盒，开启你的暖冬惊喜</p>
+        </div>
     </div>
-    <button class="main-btn" id="activate">初始化平安夜监测序列</button>
+
+    <div class="portal-grid" id="portals">
+        <a href="javascript:void(0)" class="portal-item" onclick="openVideo('BV1GJ411x7h7')">
+            <div style="font-size: 24px;">📺</div>
+            <div style="font-size: 14px; margin-top: 5px;">看个视频</div>
+        </a>
+        <a href="https://www.apple.com.cn" target="_blank" class="portal-item">
+            <div style="font-size: 24px;">🍎</div>
+            <div style="font-size: 14px; margin-top: 5px;">送你苹果</div>
+        </a>
+        <a href="https://music.163.com" target="_blank" class="portal-item">
+            <div style="font-size: 24px;">🎵</div>
+            <div style="font-size: 14px; margin-top: 5px;">听首暖歌</div>
+        </a>
+        <a href="javascript:void(0)" class="portal-item" onclick="alert('愿你今晚有个好梦！💤')">
+            <div style="font-size: 24px;">✨</div>
+            <div style="font-size: 14px; margin-top: 5px;">专属祝福</div>
+        </a>
+    </div>
 </div>
 
-<div id="blessing-modal">
-    <div style="color: #00f2ff; font-size: 10px; margin-bottom: 20px;">[专属祝福分析报告]</div>
-    <div id="text-target" class="typewriter"></div>
-    <button class="main-btn" style="position:relative; margin-top:30px; bottom:0; padding:10px 20px; font-size:12px;" onclick="location.reload()">重新监测</button>
+<div class="video-overlay" id="vidOverlay">
+    <div class="video-box">
+        <span class="close-vid" onclick="closeVideo()">✕ 关闭</span>
+        <iframe id="bili-player" src="" width="100%" height="100%" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
+    </div>
 </div>
 
-<audio id="bgm" loop><source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Chapter_One_Cold/Kai_Engel_-_02_-_One_iri.mp3" type="audio/mpeg"></audio>
+<audio id="bgm" loop><source src="https://m801.music.126.net/20231225/piano-warm.mp3" type="audio/mpeg"></audio>
 
 <script>
-    let scene, camera, renderer, globe, particles;
+    // 1. 三维雪花背景
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas-bg'), alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-    function init() {
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        const globeGeo = new THREE.SphereGeometry(5, 64, 64);
-        const globeMat = new THREE.MeshPhongMaterial({
-            color: 0x000510, emissive: 0x001122, wireframe: true, transparent: true, opacity: 0.3
-        });
-        globe = new THREE.Mesh(globeGeo, globeMat);
-        globe.rotation.y = (104 + 90) * (Math.PI / 180);
-        scene.add(globe);
-
-        const pointsCount = 4000;
-        const positions = new Float32Array(pointsCount * 3);
-        const colors = new Float32Array(pointsCount * 3);
-        const color = new THREE.Color();
-
-        for(let i = 0; i < pointsCount; i++) {
-            const phi = Math.acos(-1 + (2 * i) / pointsCount);
-            const theta = Math.sqrt(pointsCount * Math.PI) * phi;
-            positions[i*3] = 5.01 * Math.cos(theta) * Math.sin(phi);
-            positions[i*3+1] = 5.01 * Math.sin(theta) * Math.sin(phi);
-            positions[i*3+2] = 5.01 * Math.cos(phi);
-
-            const latRatio = (positions[i*3+1] + 5) / 10;
-            if(latRatio > 0.6) color.setRGB(0.7, 0.9, 1.0);
-            else if(latRatio > 0.4) color.setRGB(0.0, 0.9, 0.8);
-            else color.setRGB(1.0, 0.4, 0.0);
-            colors[i*3] = color.r; colors[i*3+1] = color.g; colors[i*3+2] = color.b;
-        }
-
-        const partGeo = new THREE.BufferGeometry();
-        partGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        partGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        particles = new THREE.Points(partGeo, new THREE.PointsMaterial({ size: 0.04, vertexColors: true, blending: THREE.AdditiveBlending }));
-        globe.add(particles);
-
-        camera.position.z = 25;
-        animate();
-    }
+    const snowGeo = new THREE.BufferGeometry();
+    const snowCount = 1500;
+    const posArr = new Float32Array(snowCount * 3);
+    for(let i=0; i<snowCount*3; i++) posArr[i] = (Math.random()-0.5) * 20;
+    snowGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+    const snowMat = new THREE.PointsMaterial({ size: 0.08, color: 0xffffff, transparent: true, opacity: 0.6 });
+    const snow = new THREE.Points(snowGeo, snowMat);
+    scene.add(snow);
+    camera.position.z = 5;
 
     function animate() {
         requestAnimationFrame(animate);
-        globe.rotation.y += 0.001;
+        snow.rotation.y += 0.001;
+        snow.position.y -= 0.01;
+        if(snow.position.y < -5) snow.position.y = 5;
         renderer.render(scene, camera);
     }
+    animate();
 
-    // 文案库：可根据需求增加
-    const quotes = [
-        "监测到神州上空有强烈暖流汇聚。\n愿这股温热驱散你冬日的寒意，\n平安夜里，万事顺遂。",
-        "卫星锁定东八区坐标：104.19E。\n在这里，有人正为你点亮星光。\n愿你被世界温柔以待，岁岁平安。",
-        "量子链路已建立。\n正在向你的坐标传输跨时空祝福：\n愿你此后的每一个冬夜，\n都有星火可栖，有爱可寻。",
-        "当前大气透明度：100%。\n非常适合观测属于你的奇迹。\n平安夜快乐，我的朋友。"
-    ];
-
-    document.getElementById('activate').onclick = function() {
-        this.style.display = 'none';
-        document.getElementById('bgm').play();
+    // 2. 交互逻辑：拆开礼盒
+    function unfoldMagic() {
+        // 播放音乐
+        document.getElementById('bgm').play().catch(() => {});
         
-        // 1. 镜头俯冲
-        gsap.to(camera.position, { z: 8.5, duration: 4, ease: "power4.inOut" });
-        gsap.to(globe.rotation, { x: 0.4, duration: 4, ease: "power4.inOut", onComplete: showBlessing });
-    };
-
-    function showBlessing() {
-        const modal = document.getElementById('blessing-modal');
-        const target = document.getElementById('text-target');
-        const quote = quotes[Math.floor(Math.random() * quotes.length)];
-        modal.style.display = 'flex';
-
-        // 模拟打字机效果
-        let i = 0;
-        function type() {
-            if (i < quote.length) {
-                target.textContent += quote.charAt(i);
-                i++;
-                setTimeout(type, 100);
-            } else {
-                target.style.borderRight = "none";
-            }
-        }
-        type();
+        // 礼盒爆炸动画
+        gsap.to("#gift", { scale: 3, opacity: 0, duration: 0.5, ease: "power2.out", onComplete: () => {
+            document.getElementById('gift').innerHTML = "🎄";
+            gsap.to("#gift", { scale: 1, opacity: 1, duration: 1, ease: "elastic.out(1, 0.3)" });
+            showPortals();
+        }});
+        
+        document.getElementById('title').innerText = "平安夜快乐";
+        document.getElementById('hint-text').innerText = "愿每一个愿望都能成真";
     }
 
-    init();
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+    function showPortals() {
+        const grid = document.getElementById('portals');
+        grid.style.display = 'grid';
+        gsap.to(grid, { opacity: 1, y: 0, duration: 1, delay: 0.5 });
+    }
+
+    // 3. 视频逻辑
+    function openVideo(bvid) {
+        const overlay = document.getElementById('vidOverlay');
+        const player = document.getElementById('bili-player');
+        player.src = `//player.bilibili.com/player.html?bvid=${bvid}&page=1&high_quality=1`;
+        overlay.style.display = 'flex';
+    }
+
+    function closeVideo() {
+        document.getElementById('vidOverlay').style.display = 'none';
+        document.getElementById('bili-player').src = '';
+    }
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth/window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    };
 </script>
 </body>
 </html>
