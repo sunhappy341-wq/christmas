@@ -3,126 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merry Christmas 2025</title>
+    <title>璀璨平安夜 - 专属奇迹</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Arial', sans-serif; }
-        canvas { display: block; }
+        body { margin: 0; background: #00050a; overflow: hidden; font-family: 'PingFang SC', serif; }
         
-        /* 浮动UI层 */
-        #overlay {
+        /* 唯美遮罩层 */
+        #ui-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: radial-gradient(circle, transparent 0%, rgba(0,0,0,0.8) 100%);
             z-index: 10; pointer-events: none;
+            background: radial-gradient(circle, transparent 20%, rgba(0,5,10,0.8) 100%);
         }
 
-        .countdown {
-            font-size: 12px; letter-spacing: 5px; color: #f1c40f;
-            margin-bottom: 20px; opacity: 0;
-        }
-
-        .main-title {
-            font-size: 60px; font-weight: 900; color: #fff;
-            text-shadow: 0 0 20px rgba(255,255,255,0.5);
-            margin: 0; opacity: 0; transform: scale(0.8);
-        }
-
-        /* 极简按钮：点击开启仪式 */
+        /* 极简金色按钮 */
         #start-btn {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 20px 40px; background: none; border: 1px solid #fff;
-            color: #fff; font-size: 14px; letter-spacing: 4px;
-            cursor: pointer; z-index: 100; transition: 0.5s;
+            padding: 18px 45px; background: none; border: 1px solid #f1c40f;
+            color: #f1c40f; font-size: 16px; letter-spacing: 5px;
+            cursor: pointer; z-index: 100; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
         }
-        #start-btn:hover { background: #fff; color: #000; box-shadow: 0 0 30px #fff; }
+        #start-btn:hover { background: #f1c40f; color: #000; box-shadow: 0 0 50px rgba(241,196,15,0.6); }
+
+        .title-wrap { text-align: center; opacity: 0; transform: translateY(30px); }
+        .main-title { 
+            font-size: 45px; font-weight: 300; color: #fff; margin: 0;
+            text-shadow: 0 0 30px rgba(255,255,255,0.8); letter-spacing: 8px;
+        }
+        .sub-title { color: #f1c40f; font-size: 14px; margin-top: 15px; letter-spacing: 12px; }
+
+        /* 音乐播放提示 */
+        #music-status { position: fixed; bottom: 20px; left: 20px; font-size: 10px; color: rgba(255,255,255,0.3); z-index: 100; }
     </style>
 </head>
 <body>
 
-<button id="start-btn">开启平安夜仪式</button>
+<button id="start-btn">点亮圣诞奇迹</button>
+<div id="music-status">BGM: 钢琴舒缓版 - 铃儿响叮当</div>
 
-<div id="overlay">
-    <div class="countdown" id="timer">CHRISTMAS IS COMING</div>
-    <h1 class="main-title" id="text">MERRY CHRISTMAS</h1>
+<div id="ui-layer">
+    <div class="title-wrap" id="content">
+        <h1 class="main-title">Merry Christmas</h1>
+        <div class="sub-title">愿 岁 月 恒 静 · 平 安 喜 乐</div>
+    </div>
 </div>
 
+<audio id="bgm" loop>
+    <source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Chapter_One_Cold/Kai_Engel_-_04_-_Moonlight_Reprise.mp3" type="audio/mpeg">
+</audio>
+
 <script>
-    let scene, camera, renderer, tree, stars;
-    
+    let scene, camera, renderer, tree, stars, floor;
+
     function init() {
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ antialias: true });
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // 1. 创建星空背景
+        // 1. 星空 & 流星
         const starGeo = new THREE.BufferGeometry();
         const starPos = [];
-        for(let i=0; i<5000; i++) {
-            starPos.push((Math.random()-0.5)*100, (Math.random()-0.5)*100, (Math.random()-0.5)*100);
+        for(let i=0; i<3000; i++) {
+            starPos.push((Math.random()-0.5)*150, (Math.random()-0.5)*150, (Math.random()-0.5)*150);
         }
         starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
         stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.1}));
         scene.add(stars);
 
-        // 2. 创建粒子圣诞树 (由螺旋线组成)
+        // 2. 幻彩粒子圣诞树
         const treePoints = [];
-        const treeCount = 3000;
+        const colors = [];
+        const treeCount = 4000;
         for(let i=0; i<treeCount; i++) {
             const ratio = i / treeCount;
-            const angle = ratio * Math.PI * 20;
-            const radius = (1 - ratio) * 2;
+            const angle = ratio * Math.PI * 25;
+            const radius = (1 - ratio) * 2.5;
             const x = Math.cos(angle) * radius;
             const z = Math.sin(angle) * radius;
-            const y = ratio * 6 - 3;
+            const y = ratio * 7 - 3;
             treePoints.push(x, y, z);
+            
+            // 颜色渐变：从底部的翠绿到顶部的金色
+            const color = new THREE.Color();
+            color.setHSL(0.3 + ratio * 0.1, 0.8, 0.5 + ratio * 0.3);
+            colors.push(color.r, color.g, color.b);
         }
         const treeGeo = new THREE.BufferGeometry();
         treeGeo.setAttribute('position', new THREE.Float32BufferAttribute(treePoints, 3));
+        treeGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        
         const treeMat = new THREE.PointsMaterial({
-            color: 0x2ecc71,
-            size: 0.05,
+            size: 0.06,
+            vertexColors: true,
             blending: THREE.AdditiveBlending,
-            transparent: true
+            transparent: true,
+            opacity: 0.9
         });
         tree = new THREE.Points(treeGeo, treeMat);
         scene.add(tree);
 
-        camera.position.z = 10;
+        // 3. 底部虚幻倒影
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshPhongMaterial({ 
+            color: 0x00050a, 
+            transparent: true, 
+            opacity: 0.4, 
+            shininess: 100 
+        });
+        floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -3.2;
+        scene.add(floor);
+
+        // 灯光
+        const light = new THREE.PointLight(0xf1c40f, 1, 20);
+        light.position.set(0, 5, 0);
+        scene.add(light);
+
+        camera.position.set(0, 2, 15);
         animate();
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        stars.rotation.y += 0.0005;
-        tree.rotation.y += 0.01;
+        stars.rotation.y += 0.0003;
+        tree.rotation.y += 0.005;
+        // 树的呼吸效果
+        const time = Date.now() * 0.002;
+        tree.material.size = 0.06 + Math.sin(time) * 0.02;
         renderer.render(scene, camera);
     }
 
-    // 仪式启动
+    // 仪式点击
     document.getElementById('start-btn').onclick = function() {
-        this.style.display = 'none';
+        this.style.opacity = '0';
+        setTimeout(() => this.style.display = 'none', 500);
         
-        // 镜头拉近动画
-        gsap.to(camera.position, { z: 5, duration: 3, ease: "power2.inOut" });
+        // 播放音乐
+        const audio = document.getElementById('bgm');
+        audio.play();
+
+        // 运镜动画：拉近并俯视
+        gsap.to(camera.position, { z: 8, y: 1, duration: 4, ease: "expo.out" });
         
         // 文字浮现
-        gsap.to("#timer", { opacity: 1, y: -20, duration: 1.5, delay: 1 });
-        gsap.to("#text", { 
+        gsap.to("#content", { 
             opacity: 1, 
-            scale: 1, 
-            duration: 2, 
-            delay: 1.5, 
-            ease: "back.out(1.7)",
-            onStart: () => {
-                // 树颜色变幻
-                gsap.to(tree.material.color, { r: 1, g: 0.84, b: 0, duration: 2, repeat: -1, yoyo: true });
-            }
+            y: 0, 
+            duration: 2.5, 
+            delay: 1, 
+            ease: "power4.out" 
         });
+
+        // 背景音乐提示消失
+        gsap.to("#music-status", { opacity: 0.5, delay: 5 });
     };
 
     window.addEventListener('resize', () => {
