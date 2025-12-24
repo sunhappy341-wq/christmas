@@ -2,154 +2,136 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎄 圣诞快乐 - 专属你的惊喜</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merry Christmas 2025</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        :root { --red: #d63031; --green: #2d3436; --gold: #f1c40f; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #001a2d; color: white; font-family: 'PingFang SC', sans-serif; overflow: hidden; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Arial', sans-serif; }
+        canvas { display: block; }
+        
+        /* 浮动UI层 */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle, transparent 0%, rgba(0,0,0,0.8) 100%);
+            z-index: 10; pointer-events: none;
+        }
 
-        /* 雪花画布 */
-        #snow-canvas { position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none; }
+        .countdown {
+            font-size: 12px; letter-spacing: 5px; color: #f1c40f;
+            margin-bottom: 20px; opacity: 0;
+        }
 
-        /* 信封包装 */
-        .envelope-wrapper {
+        .main-title {
+            font-size: 60px; font-weight: 900; color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            margin: 0; opacity: 0; transform: scale(0.8);
+        }
+
+        /* 极简按钮：点击开启仪式 */
+        #start-btn {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 100; cursor: pointer; text-align: center;
+            padding: 20px 40px; background: none; border: 1px solid #fff;
+            color: #fff; font-size: 14px; letter-spacing: 4px;
+            cursor: pointer; z-index: 100; transition: 0.5s;
         }
-
-        .envelope {
-            width: 280px; height: 180px; background: var(--red);
-            border-radius: 0 0 10px 10px; position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-
-        .envelope::before {
-            content: ''; position: absolute; top: -100px; left: 0;
-            border-left: 140px solid transparent; border-right: 140px solid transparent;
-            border-bottom: 100px solid #b71c1c; z-index: 2; transition: 0.5s;
-        }
-
-        .heart {
-            position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-            font-size: 40px; color: var(--gold); z-index: 10;
-        }
-
-        /* 祝福卡片 */
-        .card {
-            position: absolute; bottom: 0; left: 10px; width: 260px; height: 160px;
-            background: white; color: #333; padding: 20px; border-radius: 5px;
-            transition: 0.8s; z-index: 1; opacity: 0;
-        }
-
-        /* 圣诞树容器 */
-        #tree-container {
-            position: fixed; bottom: 10%; left: 50%; transform: translateX(-50%);
-            z-index: 2; display: none; text-align: center;
-        }
-
-        .msg {
-            font-size: 24px; font-weight: bold; margin-top: 20px;
-            text-shadow: 0 0 10px var(--gold); opacity: 0;
-        }
-
-        .buy-btn {
-            margin-top: 20px; padding: 10px 30px; background: var(--red);
-            border: none; color: white; border-radius: 20px; cursor: pointer;
-        }
+        #start-btn:hover { background: #fff; color: #000; box-shadow: 0 0 30px #fff; }
     </style>
 </head>
 <body>
 
-<canvas id="snow-canvas"></canvas>
+<button id="start-btn">开启平安夜仪式</button>
 
-<div class="envelope-wrapper" id="opener" onclick="openSurprise()">
-    <div class="envelope">
-        <div class="heart">🎁</div>
-        <div class="card" id="letter">
-            <h4 style="color: var(--red)">To 我的朋友:</h4>
-            <p style="font-size: 14px; margin-top: 10px;">愿你的圣诞充满喜悦，<br>平安夜里万事顺遂。🌟</p>
-        </div>
-    </div>
-    <p style="margin-top: 20px; color: var(--gold); letter-spacing: 2px;">点击拆开惊喜</p>
+<div id="overlay">
+    <div class="countdown" id="timer">CHRISTMAS IS COMING</div>
+    <h1 class="main-title" id="text">MERRY CHRISTMAS</h1>
 </div>
-
-<div id="tree-container">
-    <div id="tree-canvas-placeholder" style="font-size: 100px;">🎄</div>
-    <div class="msg" id="blessing">MERRY CHRISTMAS</div>
-    <div class="msg" id="sub-blessing" style="font-size: 16px; color: var(--gold);">平安喜乐，得偿所愿</div>
-    <button class="buy-btn" onclick="location.reload()">再看一遍</button>
-</div>
-
-<audio id="bgm" loop>
-    <source src="https://m801.music.126.net/20231224160000/christmas.mp3" type="audio/mpeg">
-</audio>
 
 <script>
-    // 1. 3D 雪花系统
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('snow-canvas'), alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    let scene, camera, renderer, tree, stars;
+    
+    function init() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
 
-    const snowGeo = new THREE.BufferGeometry();
-    const snowCount = 2000;
-    const posArray = new Float32Array(snowCount * 3);
+        // 1. 创建星空背景
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = [];
+        for(let i=0; i<5000; i++) {
+            starPos.push((Math.random()-0.5)*100, (Math.random()-0.5)*100, (Math.random()-0.5)*100);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+        stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.1}));
+        scene.add(stars);
 
-    for(let i=0; i<snowCount*3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 20;
+        // 2. 创建粒子圣诞树 (由螺旋线组成)
+        const treePoints = [];
+        const treeCount = 3000;
+        for(let i=0; i<treeCount; i++) {
+            const ratio = i / treeCount;
+            const angle = ratio * Math.PI * 20;
+            const radius = (1 - ratio) * 2;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            const y = ratio * 6 - 3;
+            treePoints.push(x, y, z);
+        }
+        const treeGeo = new THREE.BufferGeometry();
+        treeGeo.setAttribute('position', new THREE.Float32BufferAttribute(treePoints, 3));
+        const treeMat = new THREE.PointsMaterial({
+            color: 0x2ecc71,
+            size: 0.05,
+            blending: THREE.AdditiveBlending,
+            transparent: true
+        });
+        tree = new THREE.Points(treeGeo, treeMat);
+        scene.add(tree);
+
+        camera.position.z = 10;
+        animate();
     }
-    snowGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    const snowMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.8 });
-    const snow = new THREE.Points(snowGeo, snowMat);
-    scene.add(snow);
-    camera.position.z = 5;
 
-    function animateSnow() {
-        requestAnimationFrame(animateSnow);
-        snow.rotation.y += 0.002;
-        snow.position.y -= 0.01;
-        if(snow.position.y < -5) snow.position.y = 5;
+    function animate() {
+        requestAnimationFrame(animate);
+        stars.rotation.y += 0.0005;
+        tree.rotation.y += 0.01;
         renderer.render(scene, camera);
     }
-    animateSnow();
 
-    // 2. 交互逻辑
-    function openSurprise() {
-        // 播放音乐
-        const bgm = document.getElementById('bgm');
-        bgm.play().catch(() => console.log("等待交互播放"));
-
-        // 信封动画
-        gsap.to(".envelope-wrapper", { y: -100, opacity: 0, duration: 1, ease: "power2.in", onComplete: () => {
-            document.getElementById('opener').style.display = 'none';
-            showTree();
-        }});
-    }
-
-    function showTree() {
-        const treeCont = document.getElementById('tree-container');
-        treeCont.style.display = 'block';
+    // 仪式启动
+    document.getElementById('start-btn').onclick = function() {
+        this.style.display = 'none';
         
-        // 祝福语动画
-        gsap.to("#blessing", { opacity: 1, y: -20, duration: 1.5, delay: 0.5 });
-        gsap.to("#sub-blessing", { opacity: 1, y: -10, duration: 1.5, delay: 1 });
+        // 镜头拉近动画
+        gsap.to(camera.position, { z: 5, duration: 3, ease: "power2.inOut" });
         
-        // 圣诞树缩放
-        gsap.from("#tree-canvas-placeholder", { scale: 0, rotation: 720, duration: 2, ease: "elastic.out(1, 0.3)" });
-        
-        // 背景雪花加速
-        gsap.to(snow.rotation, { y: 0.05, duration: 5 });
-    }
+        // 文字浮现
+        gsap.to("#timer", { opacity: 1, y: -20, duration: 1.5, delay: 1 });
+        gsap.to("#text", { 
+            opacity: 1, 
+            scale: 1, 
+            duration: 2, 
+            delay: 1.5, 
+            ease: "back.out(1.7)",
+            onStart: () => {
+                // 树颜色变幻
+                gsap.to(tree.material.color, { r: 1, g: 0.84, b: 0, duration: 2, repeat: -1, yoyo: true });
+            }
+        });
+    };
 
-    // 窗口适配
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    init();
 </script>
 </body>
 </html>
