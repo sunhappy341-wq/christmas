@@ -3,174 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>璀璨平安夜 - 专属奇迹</title>
+    <title>Global Christmas Live 2025</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        body { margin: 0; background: #00050a; overflow: hidden; font-family: 'PingFang SC', serif; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
         
-        /* 唯美遮罩层 */
-        #ui-layer {
+        /* 科技感 HUD UI */
+        #hud {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 10; pointer-events: none;
-            background: radial-gradient(circle, transparent 20%, rgba(0,5,10,0.8) 100%);
+            pointer-events: none; z-index: 10; padding: 40px; color: #00ffcc;
+            display: flex; flex-direction: column; justify-content: space-between;
         }
 
-        /* 极简金色按钮 */
-        #start-btn {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 18px 45px; background: none; border: 1px solid #f1c40f;
-            color: #f1c40f; font-size: 16px; letter-spacing: 5px;
-            cursor: pointer; z-index: 100; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-        }
-        #start-btn:hover { background: #f1c40f; color: #000; box-shadow: 0 0 50px rgba(241,196,15,0.6); }
+        .header { display: flex; justify-content: space-between; opacity: 0.6; font-size: 12px; }
+        .scanning { border: 1px solid #00ffcc; padding: 10px; width: fit-content; }
 
-        .title-wrap { text-align: center; opacity: 0; transform: translateY(30px); }
-        .main-title { 
-            font-size: 45px; font-weight: 300; color: #fff; margin: 0;
-            text-shadow: 0 0 30px rgba(255,255,255,0.8); letter-spacing: 8px;
+        .center-ui {
+            text-align: center; pointer-events: all;
         }
-        .sub-title { color: #f1c40f; font-size: 14px; margin-top: 15px; letter-spacing: 12px; }
 
-        /* 音乐播放提示 */
-        #music-status { position: fixed; bottom: 20px; left: 20px; font-size: 10px; color: rgba(255,255,255,0.3); z-index: 100; }
+        .main-btn {
+            background: none; border: 1px solid #00ffcc; color: #00ffcc;
+            padding: 20px 60px; font-size: 14px; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 5px;
+            box-shadow: 0 0 20px rgba(0,255,204,0.3); transition: 0.3s;
+        }
+        .main-btn:hover { background: #00ffcc; color: #000; box-shadow: 0 0 50px #00ffcc; }
+
+        .terminal-text { 
+            font-size: 14px; color: #fff; text-shadow: 0 0 5px #fff; 
+            margin-top: 20px; letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
 
-<button id="start-btn">点亮圣诞奇迹</button>
-<div id="music-status">BGM: 钢琴舒缓版 - 铃儿响叮当</div>
-
-<div id="ui-layer">
-    <div class="title-wrap" id="content">
-        <h1 class="main-title">Merry Christmas</h1>
-        <div class="sub-title">愿 岁 月 恒 静 · 平 安 喜 乐</div>
+<div id="hud">
+    <div class="header">
+        <div>ORBITAL STATUS: ACTIVE<br>SCANNING REGION: GLOBAL</div>
+        <div>2025-12-24 / 23:59:59</div>
     </div>
+    
+    <div class="center-ui">
+        <button class="main-btn" id="activate">初始化平安夜序列</button>
+        <div class="terminal-text" id="log">> WAITING FOR ACTIVATION...</div>
+    </div>
+
+    <div class="scanning">TARGET: WORLDWIDE_PEACE<br>STABILITY: 100%</div>
 </div>
 
 <audio id="bgm" loop>
-    <source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Chapter_One_Cold/Kai_Engel_-_04_-_Moonlight_Reprise.mp3" type="audio/mpeg">
+    <source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Chapter_One_Cold/Kai_Engel_-_02_-_One_iri.mp3" type="audio/mpeg">
 </audio>
 
 <script>
-    let scene, camera, renderer, tree, stars, floor;
+    let scene, camera, renderer, globe, stars;
 
     function init() {
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // 1. 星空 & 流星
+        // 1. 璀璨星空
         const starGeo = new THREE.BufferGeometry();
         const starPos = [];
-        for(let i=0; i<3000; i++) {
-            starPos.push((Math.random()-0.5)*150, (Math.random()-0.5)*150, (Math.random()-0.5)*150);
+        for(let i=0; i<8000; i++) {
+            starPos.push((Math.random()-0.5)*200, (Math.random()-0.5)*200, (Math.random()-0.5)*200);
         }
         starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
         stars = new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.1}));
         scene.add(stars);
 
-        // 2. 幻彩粒子圣诞树
-        const treePoints = [];
-        const colors = [];
-        const treeCount = 4000;
-        for(let i=0; i<treeCount; i++) {
-            const ratio = i / treeCount;
-            const angle = ratio * Math.PI * 25;
-            const radius = (1 - ratio) * 2.5;
-            const x = Math.cos(angle) * radius;
-            const z = Math.sin(angle) * radius;
-            const y = ratio * 7 - 3;
-            treePoints.push(x, y, z);
-            
-            // 颜色渐变：从底部的翠绿到顶部的金色
-            const color = new THREE.Color();
-            color.setHSL(0.3 + ratio * 0.1, 0.8, 0.5 + ratio * 0.3);
-            colors.push(color.r, color.g, color.b);
-        }
-        const treeGeo = new THREE.BufferGeometry();
-        treeGeo.setAttribute('position', new THREE.Float32BufferAttribute(treePoints, 3));
-        treeGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        
-        const treeMat = new THREE.PointsMaterial({
-            size: 0.06,
-            vertexColors: true,
-            blending: THREE.AdditiveBlending,
+        // 2. 核心：线框/粒子地球 (这就是不low的关键，不是贴一张图)
+        const globeGeo = new THREE.SphereGeometry(5, 64, 64);
+        const globeMat = new THREE.MeshPhongMaterial({
+            color: 0x001122,
+            emissive: 0x002244,
+            wireframe: true, // 赛博线框感
             transparent: true,
-            opacity: 0.9
+            opacity: 0.5
         });
-        tree = new THREE.Points(treeGeo, treeMat);
-        scene.add(tree);
+        globe = new THREE.Mesh(globeGeo, globeMat);
+        scene.add(globe);
 
-        // 3. 底部虚幻倒影
-        const floorGeo = new THREE.PlaneGeometry(100, 100);
-        const floorMat = new THREE.MeshPhongMaterial({ 
-            color: 0x00050a, 
-            transparent: true, 
-            opacity: 0.4, 
-            shininess: 100 
+        // 3. 地球上的发光光点（模拟各大城市平安夜亮灯）
+        const pointsGeo = new THREE.SphereGeometry(5.05, 32, 32);
+        const pointsMat = new THREE.PointsMaterial({
+            color: 0x00ffcc,
+            size: 0.05,
+            blending: THREE.AdditiveBlending
         });
-        floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        floor.position.y = -3.2;
-        scene.add(floor);
+        const globePoints = new THREE.Points(pointsGeo, pointsMat);
+        globe.add(globePoints);
 
         // 灯光
-        const light = new THREE.PointLight(0xf1c40f, 1, 20);
-        light.position.set(0, 5, 0);
+        const light = new THREE.PointLight(0xffffff, 1.5, 100);
+        light.position.set(10, 10, 10);
         scene.add(light);
 
-        camera.position.set(0, 2, 15);
+        camera.position.z = 15;
         animate();
     }
 
     function animate() {
         requestAnimationFrame(animate);
-        stars.rotation.y += 0.0003;
-        tree.rotation.y += 0.005;
-        // 树的呼吸效果
-        const time = Date.now() * 0.002;
-        tree.material.size = 0.06 + Math.sin(time) * 0.02;
+        globe.rotation.y += 0.002;
+        stars.rotation.x += 0.0001;
         renderer.render(scene, camera);
     }
 
-    // 仪式点击
-    document.getElementById('start-btn').onclick = function() {
-        this.style.opacity = '0';
-        setTimeout(() => this.style.display = 'none', 500);
-        
-        // 播放音乐
-        const audio = document.getElementById('bgm');
-        audio.play();
+    // 仪式逻辑
+    document.getElementById('activate').onclick = function() {
+        const log = document.getElementById('log');
+        this.style.display = 'none';
+        document.getElementById('bgm').play();
 
-        // 运镜动画：拉近并俯视
-        gsap.to(camera.position, { z: 8, y: 1, duration: 4, ease: "expo.out" });
+        // 模拟指令行
+        const sequence = [
+            "> INITIALIZING...",
+            "> POSITIONING SATELLITE...",
+            "> MAPPING FESTIVE ENERGY...",
+            "> MERRY CHRISTMAS WORLDWIDE."
+        ];
         
-        // 文字浮现
-        gsap.to("#content", { 
-            opacity: 1, 
-            y: 0, 
-            duration: 2.5, 
-            delay: 1, 
-            ease: "power4.out" 
+        sequence.forEach((text, i) => {
+            setTimeout(() => {
+                log.innerText = text;
+                if(i === 3) startGrandFinale();
+            }, i * 1000);
         });
-
-        // 背景音乐提示消失
-        gsap.to("#music-status", { opacity: 0.5, delay: 5 });
     };
 
+    function startGrandFinale() {
+        // 瞬间拉近镜头 (神谕般的冲击力)
+        gsap.to(camera.position, { z: 7, duration: 4, ease: "power4.inOut" });
+        gsap.to(globe.rotation, { y: globe.rotation.y + Math.PI * 2, duration: 4 });
+        
+        // 变色
+        gsap.to(globe.material.color, { r: 0.8, g: 0.1, b: 0.1, duration: 3 });
+        gsap.to(globe.material.emissive, { r: 0.4, g: 0, b: 0, duration: 3 });
+    }
+
+    init();
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
-    init();
 </script>
 </body>
 </html>
